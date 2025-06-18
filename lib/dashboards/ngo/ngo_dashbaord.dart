@@ -35,6 +35,12 @@ class NgoDashboard extends StatelessWidget {
             _drawerItem(context, Icons.edit_calendar, 'Manage Events', '/ngo/manage-events'),
              _drawerItem(context, Icons.edit, 'create Profile', '/ngo/profile'),
             _drawerItem(context, Icons.visibility, 'View Profile', '/ngo/view-profile'),
+            _drawerItem(context, Icons.group, 'Manage Volunteers', '/ngo/manage-volunteers'),
+            // _drawerItem(context, Icons.check_circle, 'Attendance', '/ngo/attendance'),
+            _drawerItem(context, Icons.assignment, 'Track Attendance', '/ngo/attendance/select-event'),
+
+
+
            
             const Divider(),
             _drawerItem(context, Icons.logout, 'Logout', '/login', replace: true),
