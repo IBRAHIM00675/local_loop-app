@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:fl_chart/fl_chart.dart';
+import 'package:intl/intl.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -13,33 +15,127 @@ class _AdminDashboardState extends State<AdminDashboard> {
   int totalUsers = 0;
   int pendingNgos = 0;
   int activeEvents = 0;
-
+  Map<String, int> monthlyEvents = {};
 
   @override
   void initState() {
     super.initState();
     loadDashboardData();
+    fetchMonthlyApprovedEvents().then((data) {
+      setState(() {
+        monthlyEvents = data;
+      });
+    });
   }
 
   Future<void> loadDashboardData() async {
-    final usersSnap = await FirebaseFirestore.instance.collection('users').get();
-    final eventsSnap = await FirebaseFirestore.instance.collection('events').get();
+    final usersSnap =
+        await FirebaseFirestore.instance.collection('users').get();
+    final eventsSnap =
+        await FirebaseFirestore.instance.collection('events').get();
 
     setState(() {
       totalUsers = usersSnap.docs.length;
 
-      pendingNgos = usersSnap.docs.where((doc) {
-        final data = doc.data();
-        final role = data['role'];
-        final isVerified = data.containsKey('isVerified') ? data['isVerified'] : false;
-        return role == 'NGO' && isVerified == false;
-      }).length;
+      pendingNgos =
+          usersSnap.docs.where((doc) {
+            final data = doc.data();
+            final role = data['role'];
+            final isVerified =
+                data.containsKey('isVerified') ? data['isVerified'] : false;
+            return role == 'NGO' && isVerified == false;
+          }).length;
 
-      activeEvents = eventsSnap.docs.where((doc) {
-        final data = doc.data();
-        return data.containsKey('isApproved') && data['isApproved'] == true;
-      }).length;
+      activeEvents =
+          eventsSnap.docs.where((doc) {
+            final data = doc.data();
+            return data.containsKey('isApproved') && data['isApproved'] == true;
+          }).length;
     });
+  }
+
+  Future<Map<String, int>> fetchMonthlyApprovedEvents() async {
+    final eventsSnap =
+        await FirebaseFirestore.instance
+            .collection('events')
+            .where('isApproved', isEqualTo: true)
+            .get();
+
+    final Map<String, int> monthlyCounts = {};
+
+    for (var doc in eventsSnap.docs) {
+      final data = doc.data();
+      if (data['createdAt'] is Timestamp) {
+        final date = (data['createdAt'] as Timestamp).toDate();
+        final String month = DateFormat('MMM').format(date);
+        monthlyCounts[month] = (monthlyCounts[month] ?? 0) + 1;
+      }
+    }
+
+    return monthlyCounts;
+  }
+
+  Widget buildEventChart(Map<String, int> data) {
+    final months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    final barData = months.map((month) => data[month] ?? 0).toList();
+
+    return AspectRatio(
+      aspectRatio: 1.6,
+      child: BarChart(
+        BarChartData(
+          borderData: FlBorderData(show: false),
+          titlesData: FlTitlesData(
+            leftTitles: AxisTitles(
+              sideTitles: SideTitles(showTitles: true, reservedSize: 32),
+            ),
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                interval: 1,
+                getTitlesWidget: (value, meta) {
+                  final i = value.toInt();
+                  return SideTitleWidget(
+                    meta: meta,
+                    child: Text(
+                      months[i],
+                      style: const TextStyle(fontSize: 10),
+                    ),
+                  );
+                },
+              ),
+            ),
+            rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          ),
+          barGroups: List.generate(months.length, (i) {
+            return BarChartGroupData(
+              x: i,
+              barRods: [
+                BarChartRodData(
+                  toY: barData[i].toDouble(),
+                  color: AdminDashboard.themeColor,
+                  width: 14,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+              ],
+            );
+          }),
+        ),
+      ),
+    );
   }
 
   @override
@@ -62,19 +158,52 @@ class _AdminDashboardState extends State<AdminDashboard> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: const [
-                  Icon(Icons.admin_panel_settings, size: 40, color: Colors.white),
+                  Icon(
+                    Icons.admin_panel_settings,
+                    size: 40,
+                    color: Colors.white,
+                  ),
                   SizedBox(height: 10),
-                  Text('Admin Panel', style: TextStyle(color: Colors.white, fontSize: 20)),
+                  Text(
+                    'Admin Panel',
+                    style: TextStyle(color: Colors.white, fontSize: 20),
+                  ),
                 ],
               ),
             ),
-            _drawerItem(context, Icons.supervised_user_circle, 'Manage Users', '/admin/manage-users'),
-            _drawerItem(context, Icons.verified_user, 'Verify NGOs', '/admin/verify-ngos'),
-            _drawerItem(context, Icons.event, 'Moderate Events', '/admin/manage-events'),
-            _drawerItem(context, Icons.analytics, 'Analytics', '/admin/analytics'),
+            _drawerItem(
+              context,
+              Icons.supervised_user_circle,
+              'Manage Users',
+              '/admin/manage-users',
+            ),
+            _drawerItem(
+              context,
+              Icons.verified_user,
+              'Verify NGOs',
+              '/admin/verify-ngos',
+            ),
+            _drawerItem(
+              context,
+              Icons.event,
+              'Moderate Events',
+              '/admin/manage-events',
+            ),
+            _drawerItem(
+              context,
+              Icons.analytics,
+              'Analytics',
+              '/admin/analytics',
+            ),
             _drawerItem(context, Icons.settings, 'Settings', '/admin/settings'),
             const Divider(),
-            _drawerItem(context, Icons.logout, 'Logout', '/login', replace: true),
+            _drawerItem(
+              context,
+              Icons.logout,
+              'Logout',
+              '/login',
+              replace: true,
+            ),
           ],
         ),
       ),
@@ -92,19 +221,45 @@ class _AdminDashboardState extends State<AdminDashboard> {
               spacing: 16,
               runSpacing: 16,
               children: [
-                SummaryCard(label: 'Total Users', count: totalUsers, icon: Icons.people),
-                SummaryCard(label: 'Pending NGOs', count: pendingNgos, icon: Icons.hourglass_top),
-                SummaryCard(label: 'Approved Events', count: activeEvents, icon: Icons.event_available),
+                SummaryCard(
+                  label: 'Total Users',
+                  count: totalUsers,
+                  icon: Icons.people,
+                ),
+                SummaryCard(
+                  label: 'Pending NGOs',
+                  count: pendingNgos,
+                  icon: Icons.hourglass_top,
+                ),
+                SummaryCard(
+                  label: 'Approved Events',
+                  count: activeEvents,
+                  icon: Icons.event_available,
+                ),
               ],
             ),
             const SizedBox(height: 40),
+            const Text(
+              'Monthly Approved Events',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 10),
+            monthlyEvents.isNotEmpty
+                ? buildEventChart(monthlyEvents)
+                : const Center(child: CircularProgressIndicator()),
           ],
         ),
       ),
     );
   }
 
-  Widget _drawerItem(BuildContext context, IconData icon, String label, String route, {bool replace = false}) {
+  Widget _drawerItem(
+    BuildContext context,
+    IconData icon,
+    String label,
+    String route, {
+    bool replace = false,
+  }) {
     return ListTile(
       leading: Icon(icon, color: AdminDashboard.themeColor),
       title: Text(label),
@@ -150,7 +305,10 @@ class SummaryCard extends StatelessWidget {
               const SizedBox(height: 6),
               Text(
                 count.toString(),
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ],
           ),

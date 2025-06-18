@@ -23,6 +23,7 @@ import 'package:local_loop/dashboards/volunteer/volunteer_profile_badges_screen.
 import 'firebase_options.dart';
 import 'auth/login_screen.dart';
 import 'auth/register_screen.dart';
+import 'theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -39,6 +40,12 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+
+    
+      theme: lightTheme,
+      darkTheme: darkTheme,
+      themeMode: ThemeMode.system, 
+
       initialRoute: '/login',
       routes: {
         '/login': (context) => const LoginScreen(),
@@ -55,8 +62,7 @@ class MyApp extends StatelessWidget {
         '/ngo/profile': (context) => const NgoProfileScreen(),
         '/ngo/view-profile': (context) => const ProfileViewScreen(),
         '/ngo/manage-volunteers': (context) => const ManageVolunteersScreen(),
-        // '/ngo/attendance': (context) => const AttendanceScreen(),
-            '/ngo/attendance/select-event': (context) => const SelectEventScreen(),
+        '/ngo/attendance/select-event': (context) => const SelectEventScreen(),
         '/volunteer_dashboard': (context) => const VolunteerDashboard(),
         '/volunteer/discover-events': (context) => const DiscoverEventsScreen(),
         '/volunteer/profile': (context) => const VolunteerProfileScreen(),
@@ -64,25 +70,6 @@ class MyApp extends StatelessWidget {
         '/volunteer/certificates': (context) => const CertificatesScreen(),
         '/volunteer/feedback': (context) => const FeedbackScreen(),
         '/volunteer/myfeedback': (context) => const MyFeedbackScreen(),
-        
-
-
-
-
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
       },
     );
   }
