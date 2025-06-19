@@ -45,6 +45,8 @@ class NgoDashboard extends StatelessWidget {
             _drawerItem(context, Icons.edit, 'Create Profile', '/ngo/profile'),
             _drawerItem(context, Icons.visibility, 'View Profile', '/ngo/view-profile'),
             _drawerItem(context, Icons.group, 'Manage Volunteers', '/ngo/manage-volunteers'),
+            _drawerItem(context, Icons.assignment, 'Track Attendance', '/ngo/attendance/select-event'),
+
             const Divider(),
             _drawerItem(context, Icons.logout, 'Logout', '/login', replace: true),
           ],
@@ -79,13 +81,13 @@ class NgoDashboard extends StatelessWidget {
     );
   }
 
-  // 👤 Drawer summary
+  
   Widget _ngoDrawerSummary(String ngoId) {
     return StreamBuilder<DocumentSnapshot>(
       stream: FirebaseFirestore.instance.collection('ngos').doc(ngoId).snapshots(),
       builder: (context, snapshot) {
         if (!snapshot.hasData || !snapshot.data!.exists) {
-          return const SizedBox(); // or show a loading card
+          return const SizedBox(); 
         }
 
         final data = snapshot.data!.data() as Map<String, dynamic>;

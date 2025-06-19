@@ -53,7 +53,7 @@ class VolunteerDashboard extends StatelessWidget {
           children: [
             const Text(
               'Welcome to your Volunteer Dashboard 👋',
-              style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             const Text(

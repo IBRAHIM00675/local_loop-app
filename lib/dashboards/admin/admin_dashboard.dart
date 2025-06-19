@@ -34,32 +34,45 @@ class _AdminDashboardState extends State<AdminDashboard> {
     final eventsSnap =
         await FirebaseFirestore.instance.collection('events').get();
 
+    int fixedNgoCount = 0;
+
+    // Fix missing isVerified field for NGO users
+    for (var doc in usersSnap.docs) {
+      final data = doc.data();
+      if (data['role'] == 'NGO' && !data.containsKey('isVerified')) {
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(doc.id)
+            .update({'isVerified': false});
+        fixedNgoCount++;
+      }
+    }
+
+    debugPrint('✅ Fixed $fixedNgoCount NGO user(s) missing isVerified');
+
     setState(() {
       totalUsers = usersSnap.docs.length;
 
-      pendingNgos =
-          usersSnap.docs.where((doc) {
-            final data = doc.data();
-            final role = data['role'];
-            final isVerified =
-                data.containsKey('isVerified') ? data['isVerified'] : false;
-            return role == 'NGO' && isVerified == false;
-          }).length;
+      pendingNgos = usersSnap.docs.where((doc) {
+        final data = doc.data();
+        final role = data['role'];
+        final isVerified =
+            data.containsKey('isVerified') ? data['isVerified'] : false;
+        return role == 'NGO' && isVerified == false;
+      }).length;
 
-      activeEvents =
-          eventsSnap.docs.where((doc) {
-            final data = doc.data();
-            return data.containsKey('isApproved') && data['isApproved'] == true;
-          }).length;
+      activeEvents = eventsSnap.docs.where((doc) {
+        final data = doc.data();
+        return data.containsKey('isApproved') && data['isApproved'] == true;
+      }).length;
     });
   }
 
   Future<Map<String, int>> fetchMonthlyApprovedEvents() async {
-    final eventsSnap =
-        await FirebaseFirestore.instance
-            .collection('events')
-            .where('isApproved', isEqualTo: true)
-            .get();
+    final eventsSnap = await FirebaseFirestore.instance
+        .collection('events')
+        .where('isApproved', isEqualTo: true)
+        .get();
 
     final Map<String, int> monthlyCounts = {};
 
@@ -77,18 +90,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
   Widget buildEventChart(Map<String, int> data) {
     final months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
     ];
     final barData = months.map((month) => data[month] ?? 0).toList();
 
